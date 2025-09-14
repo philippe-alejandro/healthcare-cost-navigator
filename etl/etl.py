@@ -124,6 +124,18 @@ async def run_etl() -> None:
                     },
                 )
 
+        # Populate provider lat/lon from ZIP centroids
+        await session.execute(
+            sa.text(
+                """
+                UPDATE providers p
+                SET latitude = z.latitude, longitude = z.longitude
+                FROM zip_codes z
+                WHERE p.provider_zip_code = z.zip AND (p.latitude IS NULL OR p.longitude IS NULL)
+                """
+            )
+        )
+
         # Generate mock ratings (deterministic per provider_id)
         result = await session.execute(sa.text("SELECT id, provider_id FROM providers"))
         providers = result.fetchall()
