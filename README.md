@@ -99,3 +99,22 @@ curl -s -X POST http://localhost:8000/ask \
 - Show `/providers` query in the browser and via cURL.
 - Show `/ask` with both cost and rating intents.
 - Mention improvements you would make with more time: better fuzzy search, full ZIP dataset, real Medicare ratings, caching, pagination, and tests.
+
+## Dataset-specific examples (using MedicareData.csv)
+
+- Cheapest DRG 470 near 10001 (40 km):
+```bash
+curl -s "http://localhost:8000/providers?drg=470&zip=10001&radius_km=40&limit=5&sort=cost" | jq .
+```
+
+- Top ratings for DRG 470 near 10032 (40 km):
+```bash
+curl -s "http://localhost:8000/providers?drg=470&zip=10032&radius_km=40&limit=5&sort=rating" | jq .
+```
+
+- NL query to /ask (cheapest DRG 470 within 25 miles of 10001):
+```bash
+curl -s -X POST http://localhost:8000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Who is cheapest for DRG 470 within 25 miles of 10001?"}' | jq .
+```
