@@ -148,7 +148,21 @@ async def ask(req: AskRequest, session: AsyncSession = Depends(get_db_session)) 
         if sort == "rating" and top.avg_rating is not None:
             answer = f"Based on data, {top.provider_name} (rating: {top.avg_rating:.1f}/10) is a top option near {zipc}."
         else:
-            answer = f"Cheapest appears to be {top.provider_name} with avg covered charges ${top.average_covered_charges:,.0f}."
+            # Prefer covered charges, else total payments, else Medicare payments
+            price_value = None
+            if top.average_covered_charges is not None:
+                price_value = top.average_covered_charges
+                price_label = "avg covered charges"
+            elif top.average_total_payments is not None:
+                price_value = top.average_total_payments
+                price_label = "avg total payments"
+            elif top.average_medicare_payments is not None:
+                price_value = top.average_medicare_payments
+                price_label = "avg Medicare payments"
+            if price_value is not None:
+                answer = f"Cheapest appears to be {top.provider_name} with {price_label} ${price_value:,.0f}."
+            else:
+                answer = f"Cheapest appears to be {top.provider_name}."
 
     return AskResult(
         answer=answer,
