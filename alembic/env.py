@@ -1,8 +1,15 @@
 import os
+import sys
+from pathlib import Path
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 from alembic import context
+
+# Ensure project root is on sys.path so 'app' can be imported when running Alembic
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.db.base import Base
 from app.db import models  # noqa: F401  # ensure models are imported
@@ -17,10 +24,11 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    return os.getenv(
-        "DATABASE_URL",
-        config.get_main_option("sqlalchemy.url"),
-    )
+    # For Alembic, ensure we use sync driver (psycopg) even if DATABASE_URL is async
+    url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    if url.startswith("postgresql+asyncpg"):
+        url = url.replace("postgresql+asyncpg", "postgresql+psycopg")
+    return url
 
 
 def run_migrations_offline() -> None:
